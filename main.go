@@ -47,17 +47,30 @@ func main() {
 		return
 	}
 
+	user := User{
+		Name: "some-name",
+		Address: Address{
+			FirstLine:  expectedFirstLine,
+			SecondLine: expectedSecondLine,
+		},
+		Age: 1,
+	}
+
+	_, err = AddUser(mongoClient, &user)
+	if err != nil {
+		return
+	}
+
 	for i := 0; i < testCount; i++ {
-		addr, err := GetAddress(mongoClient)
+		_, err := GetAddress(mongoClient)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				failCount++
 			}
-		} else {
-			fmt.Println(addr)
 		}
 	}
 	fmt.Println(failCount)
+	err = Cleanup(mongoClient)
 }
 
 func GetAddress(mongoClient *mongo.Client) (*User, error) {
@@ -80,4 +93,22 @@ func GetAddress(mongoClient *mongo.Client) (*User, error) {
 
 	err := singleResult.Decode(&address)
 	return &address, err
+}
+
+func AddUser(mongoClient *mongo.Client, user *User) (*mongo.InsertOneResult, error) {
+	return mongoClient.
+		Database(mongoDB).
+		Collection(mongoCollection).
+		InsertOne(context.Background(), user)
+}
+
+func Cleanup(mongoClient *mongo.Client) error {
+	filter := bson.M{}
+
+	_, err := mongoClient.
+		Database(mongoDB).
+		Collection(mongoCollection).
+		DeleteMany(context.Background(), filter)
+
+	return err
 }
