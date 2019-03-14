@@ -62,7 +62,7 @@ func main() {
 	}
 
 	for i := 0; i < testCount; i++ {
-		_, err := GetAddress(mongoClient)
+		_, err := GetUser(mongoClient)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				failCount++
@@ -73,19 +73,23 @@ func main() {
 	err = Cleanup(mongoClient)
 }
 
-func GetAddress(mongoClient *mongo.Client) (*User, error) {
+func GetUser(mongoClient *mongo.Client) (*User, error) {
 	var address User
+	//filter := bson.M{
+	//	"address": bson.M{
+	//		"first_line":  expectedFirstLine,
+	//		"second_line": expectedSecondLine}}
+
+	filter := bson.M{
+		"address.first_line":  expectedFirstLine,
+		"address.second_line": expectedSecondLine,
+	}
 
 	singleResult := mongoClient.
 		Database(mongoDB).
 		Collection(mongoCollection).
 		FindOne(
-			context.Background(),
-			bson.M{
-				"address": bson.M{
-					"first_line":  expectedFirstLine,
-					"second_line": expectedSecondLine},
-			})
+			context.Background(), filter)
 
 	if singleResult.Err() != nil {
 		return nil, singleResult.Err()
